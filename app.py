@@ -45,7 +45,10 @@ class AvisRequest(BaseModel):
 
 ANALYSE_PROMPT = """Tu es l'assistant relation client de l'enseigne marocaine Atlas Argan (cosmetique naturelle).
 Analyse l'avis client ci-dessous et reponds UNIQUEMENT avec un objet JSON, sans texte autour, de la forme :
-{{"sentiment": "positif|neutre|negatif", "themes": ["un a trois themes parmi : qualite, livraison, prix, emballage, service client, parfum, efficacite"], "reponse_suggeree": "reponse courtoise de deux phrases maximum, en francais, signee L'equipe Atlas Argan"}}
+{{"sentiment": "positif|neutre|negatif", "themes": ["un a trois themes parmi : qualité, livraison, prix, emballage, service client, parfum, efficacité"], "reponse_suggeree": "reponse courtoise de deux phrases maximum, en francais, signee L'equipe Atlas Argan"}}
+
+Regles pour le sentiment : une note de 1 ou 2 sur 5 donne "negatif", une note de 3 donne "neutre", une note de 4 ou 5 donne "positif", sauf si le texte contredit clairement la note.
+Pour les themes, ne retenir que les sujets dont le client parle reellement.
 
 Produit : {produit}
 Note : {note}/5
@@ -140,4 +143,3 @@ async function ask() {
 </body>
 </html>
 """
-
