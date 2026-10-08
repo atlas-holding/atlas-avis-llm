@@ -6,7 +6,7 @@ import httpx
 
 app = FastAPI(
     title="atlas-avis-llm",
-    description=""
+    description="Analyse IA des avis clients"
 )
 
 LITELLM_URL = os.getenv("LITELLM_URL", "http://litellm.llmops.svc.cluster.local:4000")
@@ -29,6 +29,53 @@ async def generate(req: PromptRequest):
             timeout=30,
         )
         return resp.json()
+
+# --- Ajout demo Session 3 : analyse IA d'un avis client -------------------
+# Appele par atlas-avis-bff. Retourne toujours un JSON exploitable :
+# si le modele ne repond pas au format attendu, valeurs par defaut.
+
+import json
+import re
+
+class AvisRequest(BaseModel):
+    produit: str = ""
+    note: int = 3
+    texte: str
+    client: str = ""
+
+ANALYSE_PROMPT = """Tu es l'assistant relation client de l'enseigne marocaine Atlas Argan (cosmetique naturelle).
+Analyse l'avis client ci-dessous et reponds UNIQUEMENT avec un objet JSON, sans texte autour, de la forme :
+{{"sentiment": "positif|neutre|negatif", "themes": ["un a trois themes parmi : qualite, livraison, prix, emballage, service client, parfum, efficacite"], "reponse_suggeree": "reponse courtoise de deux phrases maximum, en francais, signee L'equipe Atlas Argan"}}
+
+Produit : {produit}
+Note : {note}/5
+Client : {client}
+Avis : {texte}"""
+
+@app.post("/analyse")
+async def analyse(req: AvisRequest):
+    prompt = ANALYSE_PROMPT.format(produit=req.produit, note=req.note, client=req.client, texte=req.texte)
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{LITELLM_URL}/v1/chat/completions",
+            headers={"Authorization": f"Bearer {LITELLM_KEY}"},
+            json={"model": "dxp-default", "messages": [{"role": "user", "content": prompt}]},
+            timeout=30,
+        )
+    data = resp.json()
+    content = (data.get("choices") or [{}])[0].get("message", {}).get("content", "")
+    match = re.search(r"\{.*\}", content, re.S)
+    try:
+        result = json.loads(match.group(0)) if match else {}
+    except ValueError:
+        result = {}
+    themes = result.get("themes", [])
+    return {
+        "sentiment": result.get("sentiment", "neutre"),
+        "themes": themes if isinstance(themes, list) else [str(themes)],
+        "reponse_suggeree": result.get("reponse_suggeree", content[:300] or "Analyse indisponible"),
+        "modele": data.get("model", "dxp-default"),
+    }
 
 @app.get("/health")
 def health():
