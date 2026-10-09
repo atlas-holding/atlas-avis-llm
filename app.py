@@ -55,6 +55,19 @@ Note : {note}/5
 Client : {client}
 Avis : {texte}"""
 
+THEMES_LIBELLES = {
+    "qualite": "qualité", "qualité": "qualité",
+    "livraison": "livraison",
+    "prix": "prix",
+    "emballage": "emballage",
+    "service client": "service client",
+    "parfum": "parfum",
+    "efficacite": "efficacité", "efficacité": "efficacité",
+}
+
+# Le frontend attend "positif", "neutre" ou "negatif" (sans accent).
+SENTIMENTS = {"positif": "positif", "neutre": "neutre", "negatif": "negatif", "négatif": "negatif"}
+
 @app.post("/analyse")
 async def analyse(req: AvisRequest):
     prompt = ANALYSE_PROMPT.format(produit=req.produit, note=req.note, client=req.client, texte=req.texte)
@@ -73,9 +86,15 @@ async def analyse(req: AvisRequest):
     except ValueError:
         result = {}
     themes = result.get("themes", [])
+    if not isinstance(themes, list):
+        themes = [str(themes)]
+    # Libelles affiches : accents remis ici, quelle que soit la graphie du modele.
+    themes = [THEMES_LIBELLES.get(str(t).strip().lower(), str(t).strip()) for t in themes][:3]
+    sentiment = str(result.get("sentiment", "neutre")).strip().lower()
+    sentiment = SENTIMENTS.get(sentiment, "neutre")
     return {
-        "sentiment": result.get("sentiment", "neutre"),
-        "themes": themes if isinstance(themes, list) else [str(themes)],
+        "sentiment": sentiment,
+        "themes": themes,
         "reponse_suggeree": result.get("reponse_suggeree", content[:300] or "Analyse indisponible"),
         "modele": data.get("model", "dxp-default"),
     }
@@ -143,3 +162,4 @@ async function ask() {
 </body>
 </html>
 """
+

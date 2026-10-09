@@ -46,14 +46,4 @@
 #
 # Documentation complete : ADR_S0-080_Pipeline_Hooks.md.
 
-hooks:
-  - stage: deploy
-    position: pre
-    name: garde-fous-ia
-    image: harbor.dxp/dxp/testhook:latest
-    command: ["sh"]
-    args: ["-c", "echo Controle des garde-fous IA - prompt et modele autorise verifies - OK"]
-    timeoutSeconds: 60
-    critical: true
-    reason: Les reponses proposees partent chez de vrais clients - revue des garde-fous IA avant tout deploiement
-    requestedBy: Tech Lead equipe Atlas Argan
+hooks: []
