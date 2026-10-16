@@ -44,12 +44,13 @@ spec:
         - name: LITELLM_URL
           value: "http://litellm.llmops.svc.cluster.local:4000"
         - name: LITELLM_API_KEY
-          # S61 (Jeudi) : valeur en clair -- pas de mecanisme d'injection de
-          # secret par service au provisioning aujourd'hui. Connu, accepte
-          # pour la demo (meme niveau de maturite que le reste du POC),
-          # a corriger si un vrai mecanisme de secret par service est
-          # introduit (cf backlog : cles LiteLLM scopees par projet).
-          value: "dxp-LiteLLM2026"
+          # S114 (L0b, #152) -- jamais en clair : Secret cree par DxP dans le
+          # namespace du service. Non optionnel : un Secret absent bloque le
+          # demarrage du pod au lieu de produire des appels refuses.
+          valueFrom:
+            secretKeyRef:
+              name: dxp-llm-atlas-avis-llm
+              key: LITELLM_API_KEY
         resources:
           requests:
             cpu: 50m
