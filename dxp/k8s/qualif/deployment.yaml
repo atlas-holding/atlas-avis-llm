@@ -100,7 +100,7 @@ spec:
   - hosts:
     - atlas-avis-llm-qualif.68.221.5.247.nip.io
   rules:
-  - host: atlas-avis-llm.68.221.5.247.nip.io
+  - host: atlas-avis-llm-qualif.68.221.5.247.nip.io
     http:
       paths:
       - path: /
